@@ -1,0 +1,21 @@
+{
+  "name": "chrono",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron ./dist/main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "tslint": "^5.9.1",
+    "tslint-consistent-codestyle": "^1.11.0",
+    "tslint-eslint-rules": "^4.1.1",
+    "tslint-immutable": "^4.5.1"
+  },
+  "devDependencies": {
+    "electron": "^1.7.11",
+    "typescript": "^2.6.2"
+  }
+}
