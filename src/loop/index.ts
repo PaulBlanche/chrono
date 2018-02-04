@@ -1,9 +1,10 @@
-import { Game, Input, Direction, EntityHandler } from '../types';
+import { Game, Input, Size, EntityHandler } from '../types';
 import { input } from '../input';
 import { init, Fps } from '../fps';
 import { spawn as player } from '../entity/player';
 import { spawn as enemy } from '../entity/enemy';
 import { entityHandler } from '../entity';
+import { A_SECOND } from '../const';
 
 interface GameConfig {
     maxFps: number; // maximum fps of the rendering engine
@@ -29,10 +30,11 @@ const updater =
 type Draw = (game: Game) => void;
 const drawer = (
         entity: EntityHandler, fps: Fps, context: CanvasRenderingContext2D,
+        { width, height }: Size,
     ): Draw =>
     game => {
         // Clear drawing context
-        context.clearRect(0, 0, 400, 400);
+        context.clearRect(0, 0, width, height);
 
         // draw fps indicator and entities
         fps.draw();
@@ -64,7 +66,7 @@ const looper = (
     const loop: Loop = timestamp => {
         // if loop is called before a full game frame, schedule the loop for
         // next browser frame and exit
-        if (timestamp < lastFrame + Math.floor(1000 / maxFps)) {
+        if (timestamp < lastFrame + Math.floor(A_SECOND / maxFps)) {
             requestAnimationFrame(loop);
             return;
         }
@@ -119,7 +121,7 @@ const looper = (
 // define a game config
 const config: GameConfig = {
     maxFps: 60,
-    timestep: 1000 / 60,
+    timestep: A_SECOND / 60,
 };
 
 // Main function
@@ -134,6 +136,11 @@ export const run = () => {
     const ui = document.querySelector('.ui');
     if (ui === null) { throw new Error('ERROR ERROR ABORT ABORT'); }
 
+    const screenSize = {
+        width: canvas.width,
+        height: canvas.height,
+    };
+
     // Initialize fps indicator
     const fps = init(ui);
     // Initialize entity handler
@@ -144,12 +151,18 @@ export const run = () => {
         entities: [],
         fps:0,
         timestamp:0,
+        map : {
+            size : {
+                width:400,
+                height:400,
+            },
+        },
     };
 
     // Create all engine function (update, draw, before ....) and inject them
     // in loop function.
     const update = updater(entity, config.timestep);
-    const draw = drawer(entity, fps, context);
+    const draw = drawer(entity, fps, context, screenSize);
     const before = beforer(fps);
     const after = afterer();
     const loop = looper(before, update, draw, after, game, config, canvas);
@@ -158,14 +171,13 @@ export const run = () => {
     entity.spawn(game, player, {
         position: { x:0, y:0 },
         life:10,
-        speed: {
-            orthogonal: 5,
-            diagonal:3,
-        },
+        size: { width: 20, height: 20 },
     });
     entity.spawn(game, enemy, {
         position: { x:400, y:400 },
         lastdir: { x:0, y:0 },
+        size: { width: 20, height: 20 },
+        radius: 100,
     });
 
     // start the engine.

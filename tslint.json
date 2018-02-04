@@ -57,7 +57,7 @@
         "no-empty-interface":  true,
         "no-import-side-effect": true,
         "no-inferrable-types": [true, "ignore-params"],
-        "no-magic-numbers": true,
+        "no-magic-numbers": [true, -1, 0, 1, 2 ],
         "no-non-null-assertion": true,
         "no-unnecessary-type-assertion": true,
         "prefer-for-of": true,
