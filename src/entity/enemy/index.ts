@@ -1,34 +1,35 @@
-import { Spawn, State, InjectableUpdate, Draw } from '../../types';
+import { Entity } from '../../types';
 import { snapToBounds, direction, distance } from '../utils';
 
-export interface EnemyState extends State {
-    position: {
-        x: number;
-        y: number;
+export interface EnemyState extends Entity.State {
+    readonly type: 'enemy';
+    readonly position: {
+        readonly x: number;
+        readonly y: number;
     }; // enemy position
-    lastdir: {
-        x: number;
-        y: number;
+    readonly dir: {
+        readonly x: number;
+        readonly y: number;
     };
-    radius: number;
-    size: {
-        width: number;
-        height: number;
+    readonly radius: number;
+    readonly size: {
+        readonly width: number;
+        readonly height: number;
     };// enemy last dir for inertia
 }
 
 // spawn an enemy entity (draw and update functions)
-export const spawn: Spawn<EnemyState> =
-    (id, destroy, initialState) => {
+export const spawn: Entity.Spawn<EnemyState> =
+    (id, destroy) => {
         return {
             draw,
-            update:update(id, destroy, initialState),
+            update:update(id, destroy),
         };
     };
 
 // Enemy draw function
-const draw: Draw<EnemyState> =
-    (context, { position: { x, y }, size: { width, height } }, game) => {
+const draw: Entity.Draw<EnemyState> =
+    ({ context }, { position: { x, y }, size: { width, height } }) => {
         context.fillStyle = 'red';
         const rx = Math.floor(x - width / 2);
         const ry = Math.floor(y - height / 2);
@@ -43,10 +44,9 @@ const speed =
     };
 
 // Update enemy.
-const update: InjectableUpdate<EnemyState> =
-    (id, destroy, initialState) =>
-    (input, game, timestep, self=initialState) => {
-        const state = {...self};
+const update: Entity.InjectableUpdate<EnemyState> =
+    (id, destroy) =>
+    ({ game }, self) => {
 
         // Get player state
         // FIXME : magic number, have an index in game for types of entity ?
@@ -59,17 +59,18 @@ const update: InjectableUpdate<EnemyState> =
 
         // update dir with inertia
         const inertia = 0.95;
-        state.lastdir = {
-            x: dx * (1 - inertia) + self.lastdir.x * inertia,
-            y: dy * (1 - inertia) + self.lastdir.y * inertia,
+        const dir = {
+            x: dx * (1 - inertia) + self.dir.x * inertia,
+            y: dy * (1 - inertia) + self.dir.y * inertia,
         };
 
         // update position given direction and speed
-        state.position.x += state.lastdir.x * speed(n, self.radius);
-        state.position.y += state.lastdir.y * speed(n, self.radius);
-
+        let position = {
+            x: self.position.x + dir.x * speed(n, self.radius),
+            y: self.position.y + dir.y * speed(n, self.radius),
+        };
         // Snap player to game bounding box
-        state.position = snapToBounds(state.position, game.map.size, self.size);
+        position = snapToBounds(position, game.map.size, self.size);
 
-        return state;
+        return { ...self, dir, position };
     };

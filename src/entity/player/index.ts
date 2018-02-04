@@ -1,36 +1,34 @@
-import {
-    Spawn, State, InjectableUpdate, Draw, Direction, Size,
-} from '../../types';
+import { Entity, Size, Game } from '../../types';
 import { snapToBounds } from '../utils';
 
 const SPEED = {
     ORTHO : 5,
     DIAG: 3,
 };
-
-export interface PlayerState extends State {
+export interface PlayerState extends Entity.State {
+    readonly type: 'player';
     // position of the player
-    position: {
-        x: number;
-        y: number;
+    readonly position: {
+        readonly x: number;
+        readonly y: number;
     };
     // life
-    life: number;
-    size: Size;
+    readonly life: number;
+    readonly size: Size;
 }
 
 // spawn a player entity (draw and update functions)
-export const spawn: Spawn<PlayerState> =
-    (id, destroy, initialState) => {
+export const spawn: Entity.Spawn<PlayerState> =
+    (id, destroy) => {
         return {
             draw,
-            update:update(id, destroy, initialState),
+            update:update(id, destroy),
         };
     };
 
 // Player draw function
-const draw: Draw<PlayerState> =
-    (context, { position: { x, y }, size : { width, height } }, game) => {
+const draw: Entity.Draw<PlayerState> =
+    ({ context }, { position: { x, y }, size : { width, height } }) => {
         context.fillStyle = 'green';
         const rx = Math.floor(x - width / 2);
         const ry = Math.floor(y - height / 2);
@@ -38,32 +36,32 @@ const draw: Draw<PlayerState> =
     };
 
 // Player update function
-const update: InjectableUpdate<PlayerState> =
-    (id, destroy, initialState) =>
-    ({ walking, direction }, game, timestep, self=initialState) => {
-        const state = { ...self };
+const update: Entity.InjectableUpdate<PlayerState> =
+    (id, destroy) =>
+    ({ game, input: { walking, direction } }, self) => {
 
         // if player is walking, update its position according to direction
+        let position = { ... self.position };
         if (walking) {
             let dx = 0;
             let dy = 0;
-            if ((direction & Direction.Up)) {
+            if ((direction & Game.Direction.Up)) {
                 dy -= 1;
             }
-            if ((direction & Direction.Right)) {
+            if ((direction & Game.Direction.Right)) {
                 dx += 1;
             }
-            if ((direction & Direction.Down)) {
+            if ((direction & Game.Direction.Down)) {
                 dy += 1;
             }
-            if ((direction & Direction.Left)) {
+            if ((direction & Game.Direction.Left)) {
                 dx -= 1;
             }
             const spd = (dx !== 0 && dy !== 0) ? SPEED.DIAG : SPEED.ORTHO;
-            state.position.y += dy * spd;
-            state.position.x += dx * spd;
+            position.y += dy * spd;
+            position.x += dx * spd;
         }
 
-        state.position = snapToBounds(state.position, game.map.size, self.size);
-        return state;
+        position = snapToBounds(position, game.map.size, self.size);
+        return { ...self, position };
     };
