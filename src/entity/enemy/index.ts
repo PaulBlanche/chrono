@@ -1,4 +1,5 @@
-import { Spawn, Entity, State, InjectableUpdate, Draw, Direction } from '../../types';
+import { Spawn, State, InjectableUpdate, Draw } from '../../types';
+import { snapToBounds, direction, distance } from '../utils';
 
 export interface EnemyState extends State {
     position: {
@@ -8,70 +9,67 @@ export interface EnemyState extends State {
     lastdir: {
         x: number;
         y: number;
-    }; // enemy last dir for inertia
+    };
+    radius: number;
+    size: {
+        width: number;
+        height: number;
+    };// enemy last dir for inertia
 }
 
 // spawn an enemy entity (draw and update functions)
-export const spawn: Spawn<EnemyState> = (id, destroy, initialState) => {
-    return {
-        draw,
-        update:update(id, destroy, initialState),
+export const spawn: Spawn<EnemyState> =
+    (id, destroy, initialState) => {
+        return {
+            draw,
+            update:update(id, destroy, initialState),
+        };
     };
-};
 
 // Enemy draw function
-const draw: Draw<EnemyState> = (context, { position: { x, y } }, game) => {
+const draw: Draw<EnemyState> =
+    (context, { position: { x, y }, size: { width, height } }, game) => {
         context.fillStyle = 'red';
-        context.fillRect(Math.floor(x) - 10, Math.floor(y) - 10, 20, 20);
+        const rx = Math.floor(x - width / 2);
+        const ry = Math.floor(y - height / 2);
+        context.fillRect(rx, ry, width, height);
     };
 
 // Compute enemy speed given the distance to player
-const speed = (norm: number) => {
-    if (norm > 400) { return 0; }
-    return (1 - Math.pow(norm / 400, 2)) * 3;
-};
-
-// Update enemy.
-const update: InjectableUpdate<EnemyState> = (id, destroy, initialState) => (input, game, timestep, self=initialState) => {
-    const state = {...self};
-
-    // Get player state
-    // FIXME : magic number, have an index in game for types of entity ?
-    const player = game.entities[0];
-
-    // distance to player
-    const x = player.position.x - state.position.x;
-    const y = player.position.y - state.position.y;
-    const n = Math.sqrt(x ** 2 + y ** 2);
-
-    // direction to player (normalized)
-    const dx = n === 0 ? 0 : x / n;
-    const dy = n === 0 ? 0 : y / n;
-
-    // update dir with inertia
-    state.lastdir = {
-        x: 0.05 * dx + 0.95 * self.lastdir.x,
-        y: 0.05 * dy + 0.95 * self.lastdir.y,
+const speed =
+    (norm: number, radius: number) => {
+        if (norm > radius) { return 0; }
+        return (1 - Math.pow(norm / radius, 5)) * 3;
     };
 
-    // update position given direction and speed
-    state.position.x += state.lastdir.x * speed(n);
-    state.position.y += state.lastdir.y * speed(n);
+// Update enemy.
+const update: InjectableUpdate<EnemyState> =
+    (id, destroy, initialState) =>
+    (input, game, timestep, self=initialState) => {
+        const state = {...self};
 
-    // Snap player to game bounding box
-    // FIXME : magic number, should be in game state ?
-    if (state.position.y < 10) {
-        state.position.y = 10;
-    }
-    if (state.position.y > 390) {
-        state.position.y = 390;
-    }
-    if (state.position.x < 10) {
-        state.position.x = 10;
-    }
-    if (state.position.x > 390) {
-        state.position.x = 390;
-    }
+        // Get player state
+        // FIXME : magic number, have an index in game for types of entity ?
+        const player = game.entities[0];
 
-    return state;
-};
+        // distance to player
+        const n = distance(self.position, player.position);
+        // direction to player (normalized)
+        const { x:dx, y:dy } = direction(self.position, player.position);
+
+        // update dir with inertia
+        const inertia = 0.95;
+        state.lastdir = {
+            x: dx * (1 - inertia) + self.lastdir.x * inertia,
+            y: dy * (1 - inertia) + self.lastdir.y * inertia,
+        };
+
+        // update position given direction and speed
+        state.position.x += state.lastdir.x * speed(n, self.radius);
+        state.position.y += state.lastdir.y * speed(n, self.radius);
+
+        // Snap player to game bounding box
+        state.position = snapToBounds(state.position, game.map.size, self.size);
+
+        return state;
+    };

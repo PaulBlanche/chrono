@@ -1,5 +1,6 @@
+import { A_SECOND } from '../const';
+
 const DECAY = 0.9;
-const A_SECOND = 1000;
 
 interface FpsState {
     fps: number; // estimated fps
@@ -25,8 +26,9 @@ const update = ({ fps, frameCount, lastUpdate }: FpsState, now: number) => {
     // if was last update was more than a second ago, update fps with estimated
     // frames rendered during last second.
     if (now > lastUpdate + A_SECOND) {
+        const estimatedFps = frameCount / ((now - lastUpdate) / A_SECOND);
         return {
-            fps: DECAY * frameCount / ((now - lastUpdate) / A_SECOND) + (1 - DECAY) * fps,
+            fps: DECAY * estimatedFps + (1 - DECAY) * fps,
             lastUpdate: now,
             frameCount: 0,
         };
@@ -41,7 +43,8 @@ export interface Fps {
     draw: () => void;
 }
 
-// Fps indicator builder (closure to inject ui element where we put fps indicator)
+// Fps indicator builder (closure to inject ui element where we put fps
+// indicator)
 export const init = (ui: Element): Fps => {
     const fps = document.createElement('div');
     fps.classList.add('fps');
@@ -50,7 +53,10 @@ export const init = (ui: Element): Fps => {
     // keep track of previous state.
     let state = initialState;
     return {
-        update: (now: number) => { state = update(state, now); return state.fps; },
+        update: (now: number) => {
+            state = update(state, now);
+            return state.fps;
+        },
         draw: () => { draw(fps, state); },
     };
 };

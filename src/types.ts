@@ -1,5 +1,15 @@
 export interface State {}
 
+export interface Vector {
+    x: number;
+    y: number;
+}
+
+export interface Size {
+    width: number;
+    height: number;
+}
+
 export interface Entity<STATE extends State> {
     draw: Draw<STATE>;
     update: Update<STATE>;
@@ -10,6 +20,12 @@ export interface Game {
     entities: any[];
     timestamp: number;
     fps: number;
+    map: {
+        size: {
+            width: number;
+            height: number;
+        };
+    };
 }
 export interface Input {
     walking: boolean;
