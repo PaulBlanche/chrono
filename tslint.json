@@ -1,5 +1,5 @@
 {
-    "rulesDirectory": [
+    "extends": [
         "tslint-eslint-rules",
         "tslint-immutable",
         "tslint-consistent-codestyle"
@@ -7,6 +7,8 @@
     "rules": {
         "early-exit": true,
         "naming-convention": [true,
+            { "type": "variable", "modifiers": ["const", "global"], "format": "UPPER_CASE" },
+            { "type": "functionVariable", "modifiers": ["const", "global"], "format": "camelCase"},
             { "type": "variable", "modifiers": "local", "format": "camelCase" },
             { "type": "type", "format": "PascalCase" },
             { "type": "function", "format": "camelCase"},
@@ -20,11 +22,9 @@
 
         "readonly-keyword": [true, "ignore-local"],
         "readonly-array": [true, "ignore-local"],
-        "no-let": true,
         "no-class": true,
         "no-this": true,
         "no-mixed-interface": true,
-        "no-expression-statement": true,
 
         "no-constant-condition": true,
         "no-control-regex": true,
@@ -57,7 +57,7 @@
         "no-empty-interface":  true,
         "no-import-side-effect": true,
         "no-inferrable-types": [true, "ignore-params"],
-        "no-magic-numbers": [true, -1, 0, 1, 2 ],
+        "no-magic-numbers":  { "severity":"warning", "options":[-1, 0, 1, 2 ] },
         "no-non-null-assertion": true,
         "no-unnecessary-type-assertion": true,
         "prefer-for-of": true,
@@ -77,7 +77,7 @@
         "no-floating-promises": true,
         "no-inferred-empty-object-type": true,
         "no-misused-new": true,
-        "no-null-keyword": true,
+        "no-null-keyword": { "severity":"warning" },
         "no-object-literal-type-assertion": true,
         "no-shadowed-variable": true,
         "no-sparse-arrays": true,
@@ -130,5 +130,5 @@
         "trailing-comma": [true, {"multiline": "always", "singleline": "never"}],
         "whitespace": [true, "check-branch", "check-operator", "check-preblock"]
     },
-    "defaultSeverity":"warning"
+    "defaultSeverity":"error"
 }
